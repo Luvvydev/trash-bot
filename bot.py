@@ -15,10 +15,10 @@ CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None  # new
 if not TOKEN:  # new
     raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")  # new
 
-TZ = ZoneInfo("America/New_York")  # West Virginia time
+TZ = ZoneInfo("America/New_York")  # Timezone
 
-TARGET_WEEKDAY = 2  # Wednesday
-TARGET_HOUR = 0     # midnight
+TARGET_WEEKDAY = 2  # Day of weed (wed)
+TARGET_HOUR = 0     # midnight 
 TARGET_MINUTE = 0
 
 MESSAGE = "take out the trash @everyone"
