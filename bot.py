@@ -1,0 +1,103 @@
+import os
+import datetime
+from zoneinfo import ZoneInfo
+
+import discord
+from discord.ext import tasks
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TOKEN = os.getenv("DISCORD_TOKEN")
+CHANNEL_ID_RAW = os.getenv("CHANNEL_ID")  # new
+CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None  # new
+
+if not TOKEN:  # new
+    raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")  # new
+
+TZ = ZoneInfo("America/New_York")  # West Virginia time
+
+TARGET_WEEKDAY = 2  # Wednesday
+TARGET_HOUR = 0     # midnight
+TARGET_MINUTE = 0
+
+MESSAGE = "take out the trash @everyone"
+
+intents = discord.Intents.default()
+client = discord.Client(intents=intents)
+
+def next_run(now_local: datetime.datetime) -> datetime.datetime:
+    days_ahead = (TARGET_WEEKDAY - now_local.weekday()) % 7
+    target = (now_local + datetime.timedelta(days=days_ahead)).replace(
+        hour=TARGET_HOUR,
+        minute=TARGET_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+    if target <= now_local:
+        target += datetime.timedelta(days=7)
+    return target
+
+def pick_channel(guild: discord.Guild):
+    me = guild.me
+    if me is None:
+        return None
+
+    for ch in guild.text_channels:
+        perms = ch.permissions_for(me)
+        if perms.send_messages:
+            return ch
+    return None
+
+@tasks.loop(seconds=30)
+async def scheduler():
+    now = datetime.datetime.now(TZ)
+
+    if not hasattr(scheduler, "run_at"):
+        scheduler.run_at = next_run(now)
+
+    if now >= scheduler.run_at:
+        for guild in client.guilds:
+            channel = None  # new
+
+            if CHANNEL_ID is not None:  # new
+                channel = client.get_channel(CHANNEL_ID)  # new
+                if channel is None:  # new
+                    print(f"CHANNEL_ID {CHANNEL_ID} not found or not accessible to the bot.")  # new
+                    continue  # new
+            else:
+                channel = pick_channel(guild)
+
+            if channel is None:
+                print(f"No postable channel found in guild: {guild.name}")  # new
+                continue
+
+            try:
+                await channel.send(
+                    MESSAGE,
+                    allowed_mentions=discord.AllowedMentions(everyone=True),
+                )
+                print(f"Sent reminder in guild '{guild.name}' channel '{getattr(channel, 'name', 'unknown')}'")  # new
+            except Exception as e:
+                print(f"Failed to send in guild '{guild.name}': {type(e).__name__}: {e}")  # new
+
+        scheduler.run_at = next_run(now)
+
+@client.event
+async def on_ready():
+    print(f"Logged in as {client.user}")
+
+    next_time = next_run(datetime.datetime.now(TZ))  # new
+    print(f"Next run (local): {next_time.isoformat()}")  # new
+
+    if CHANNEL_ID is not None:  # new
+        ch = client.get_channel(CHANNEL_ID)  # new
+        if ch is None:  # new
+            print(f"Warning: CHANNEL_ID {CHANNEL_ID} not found or not accessible.")  # new
+        else:  # new
+            print(f"Posting to fixed channel: {getattr(ch, 'name', 'unknown')} ({CHANNEL_ID})")  # new
+
+    if not scheduler.is_running():
+        scheduler.start()
+
+client.run(TOKEN)
