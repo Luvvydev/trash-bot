@@ -10,22 +10,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID_RAW = os.getenv("CHANNEL_ID")  # new
-CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None  # new
+CHANNEL_ID_RAW = os.getenv("CHANNEL_ID")
+CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None
 
-if not TOKEN:  # new
-    raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")  # new
+if not TOKEN:
+    raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")
 
-TZ = ZoneInfo("America/New_York")  # Timezone
+TZ = ZoneInfo("America/New_York")  # West Virginia time
 
-TARGET_WEEKDAY = 2  # day of week
+TARGET_WEEKDAY = 2  # Wednesday
 TARGET_HOUR = 0     # midnight
 TARGET_MINUTE = 0
 
 MESSAGE = "take out the trash @everyone"
 
 TRASH_GIFS = [
-    "https://media.giphy.com/media/acttIrNAHaoco/giphy.gif",
     "https://media.giphy.com/media/QuvgjttKi5GL4TPtLB/giphy.gif",
     "https://media.giphy.com/media/tVOlt6mzRFNPuLFL40/giphy.gif",
     "https://media.giphy.com/media/FYXNxV12QG4HspSgOo/giphy.gif",
@@ -70,18 +69,18 @@ async def scheduler():
 
     if now >= scheduler.run_at:
         for guild in client.guilds:
-            channel = None  # new
+            channel = None
 
-            if CHANNEL_ID is not None:  # new
-                channel = client.get_channel(CHANNEL_ID)  # new
-                if channel is None:  # new
-                    print(f"CHANNEL_ID {CHANNEL_ID} not found or not accessible to the bot.")  # new
-                    continue  # new
+            if CHANNEL_ID is not None:
+                channel = client.get_channel(CHANNEL_ID)
+                if channel is None:
+                    print(f"CHANNEL_ID {CHANNEL_ID} not found or not accessible to the bot.")
+                    continue
             else:
                 channel = pick_channel(guild)
 
             if channel is None:
-                print(f"No postable channel found in guild: {guild.name}")  # new
+                print(f"No postable channel found in guild: {guild.name}")
                 continue
 
             try:
@@ -91,9 +90,13 @@ async def scheduler():
                     f"{MESSAGE}\n{gif}",
                     allowed_mentions=discord.AllowedMentions(everyone=True),
                 )
-                print(f"Sent reminder in guild '{guild.name}' channel '{getattr(channel, 'name', 'unknown')}'")  # new
+
+                print(
+                    f"Sent reminder in guild '{guild.name}' "
+                    f"channel '{getattr(channel, 'name', 'unknown')}'"
+                )
             except Exception as e:
-                print(f"Failed to send in guild '{guild.name}': {type(e).__name__}: {e}")  # new
+                print(f"Failed to send in guild '{guild.name}': {type(e).__name__}: {e}")
 
         scheduler.run_at = next_run(now)
 
@@ -101,15 +104,15 @@ async def scheduler():
 async def on_ready():
     print(f"Logged in as {client.user}")
 
-    next_time = next_run(datetime.datetime.now(TZ))  # new
-    print(f"Next run (local): {next_time.isoformat()}")  # new
+    next_time = next_run(datetime.datetime.now(TZ))
+    print(f"Next run (local): {next_time.isoformat()}")
 
-    if CHANNEL_ID is not None:  # new
-        ch = client.get_channel(CHANNEL_ID)  # new
-        if ch is None:  # new
-            print(f"Warning: CHANNEL_ID {CHANNEL_ID} not found or not accessible.")  # new
-        else:  # new
-            print(f"Posting to fixed channel: {getattr(ch, 'name', 'unknown')} ({CHANNEL_ID})")  # new
+    if CHANNEL_ID is not None:
+        ch = client.get_channel(CHANNEL_ID)
+        if ch is None:
+            print(f"Warning: CHANNEL_ID {CHANNEL_ID} not found or not accessible.")
+        else:
+            print(f"Posting to fixed channel: {getattr(ch, 'name', 'unknown')} ({CHANNEL_ID})")
 
     if not scheduler.is_running():
         scheduler.start()

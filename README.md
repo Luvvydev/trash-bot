@@ -1,6 +1,6 @@
 # TrashBot
 
-A minimal Discord bot that sends a weekly `@everyone` reminder to take out the trash.
+A minimal for personal use Discord bot that sends a weekly `@everyone` reminder to take out the trash.
 
 ---
 
