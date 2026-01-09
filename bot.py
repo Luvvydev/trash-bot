@@ -16,7 +16,7 @@ CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None
 if not TOKEN:
     raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")
 
-TZ = ZoneInfo("America/New_York")  # West Virginia time
+TZ = ZoneInfo("America/New_York")  # Timezone
 
 TARGET_WEEKDAY = 2  # Wednesday
 TARGET_HOUR = 0     # midnight
