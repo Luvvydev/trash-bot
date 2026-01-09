@@ -1,5 +1,6 @@
 import os
 import datetime
+import random
 from zoneinfo import ZoneInfo
 
 import discord
@@ -15,13 +16,24 @@ CHANNEL_ID = int(CHANNEL_ID_RAW) if CHANNEL_ID_RAW else None  # new
 if not TOKEN:  # new
     raise SystemExit("DISCORD_TOKEN is missing. Put DISCORD_TOKEN=... in .env")  # new
 
-TZ = ZoneInfo("America/New_York")  # West Virginia time
+TZ = ZoneInfo("America/New_York")  # Timezone
 
-TARGET_WEEKDAY = 2  # Wednesday
+TARGET_WEEKDAY = 2  # day of week
 TARGET_HOUR = 0     # midnight
 TARGET_MINUTE = 0
 
 MESSAGE = "take out the trash @everyone"
+
+TRASH_GIFS = [
+    "https://media.giphy.com/media/acttIrNAHaoco/giphy.gif",
+    "https://media.giphy.com/media/QuvgjttKi5GL4TPtLB/giphy.gif",
+    "https://media.giphy.com/media/tVOlt6mzRFNPuLFL40/giphy.gif",
+    "https://media.giphy.com/media/FYXNxV12QG4HspSgOo/giphy.gif",
+    "https://media.giphy.com/media/l2Jeg2UYi9opZqxJS/giphy.gif",
+    "https://media.giphy.com/media/26ufffLixTAsLgA8g/giphy.gif",
+    "https://media.giphy.com/media/11Y9TiZzmEBe25QRSw/giphy.gif",
+    "https://media.giphy.com/media/5xaOcLCBzBw4QrtdDP2/giphy.gif",
+]
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
@@ -73,8 +85,10 @@ async def scheduler():
                 continue
 
             try:
+                gif = random.choice(TRASH_GIFS)
+
                 await channel.send(
-                    MESSAGE,
+                    f"{MESSAGE}\n{gif}",
                     allowed_mentions=discord.AllowedMentions(everyone=True),
                 )
                 print(f"Sent reminder in guild '{guild.name}' channel '{getattr(channel, 'name', 'unknown')}'")  # new
