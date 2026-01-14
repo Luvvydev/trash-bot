@@ -52,8 +52,8 @@ def _read_optional_float_env(name: str) -> Optional[float]:
 
 
 TARGET_WEEKDAY = _read_int_env("TARGET_WEEKDAY", "2", 0, 6)  # Monday=0 ... Sunday=6
-TARGET_HOUR = _read_int_env("TARGET_HOUR", "0", 0, 23)
-TARGET_MINUTE = _read_int_env("TARGET_MINUTE", "0", 0, 59)
+TARGET_HOUR = _read_int_env("TARGET_HOUR", "23", 0, 23)
+TARGET_MINUTE = _read_int_env("TARGET_MINUTE", "59", 0, 59)
 
 TIMEZONE = os.getenv("TIMEZONE", "America/New_York")
 try:
@@ -134,27 +134,39 @@ def scheduled_run_for_week(now_local: datetime.datetime) -> datetime.datetime:
     Returns the most recent scheduled time (this week) at TARGET_WEEKDAY/TARGET_HOUR/TARGET_MINUTE
     that is <= now_local.
     """
-    days_back = (now_local.weekday() - TARGET_WEEKDAY) % 7
-    candidate = (now_local - datetime.timedelta(days=days_back)).replace(
+    days_forward = (TARGET_WEEKDAY - now_local.weekday()) % 7
+    candidate = (now_local + datetime.timedelta(days=days_forward)).replace(
         hour=TARGET_HOUR,
         minute=TARGET_MINUTE,
         second=0,
         microsecond=0,
     )
+
+    # If this week's candidate is in the future, the most recent run was last week.
     if candidate > now_local:
         candidate -= datetime.timedelta(days=7)
+
     return candidate
+
 
 
 def next_run_after(now_local: datetime.datetime) -> datetime.datetime:
     """
     Returns the next scheduled run strictly after now_local.
     """
-    last = scheduled_run_for_week(now_local)
-    nxt = last + datetime.timedelta(days=7)
-    if nxt <= now_local:
-        nxt += datetime.timedelta(days=7)
-    return nxt
+    days_forward = (TARGET_WEEKDAY - now_local.weekday()) % 7
+    candidate = (now_local + datetime.timedelta(days=days_forward)).replace(
+        hour=TARGET_HOUR,
+        minute=TARGET_MINUTE,
+        second=0,
+        microsecond=0,
+    )
+
+    if candidate <= now_local:
+        candidate += datetime.timedelta(days=7)
+
+    return candidate
+
 
 
 def pick_channel(guild: discord.Guild) -> Optional[discord.TextChannel]:
@@ -235,10 +247,14 @@ async def _sleep_until(target: datetime.datetime) -> None:
     while True:
         now = datetime.datetime.now(TZ)
         remaining = (target - now).total_seconds()
+
+        # If we've reached or passed the target, don't sleep at all.
         if remaining <= 0:
             if remaining < -60:
                 logger.warning(f"Clock jump detected: {abs(remaining):.0f}s behind schedule")
             return
+
+        # Sleep in chunks so we stay responsive to clock shifts/cancel.
         await asyncio.sleep(min(60.0, remaining))
 
 
