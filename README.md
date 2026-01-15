@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="trashbot.png" alt="TrashBot">
+</p>
+
+
 # TrashBot
 
 A minimal for personal use Discord bot that sends a weekly `@everyone` reminder to take out the trash.
